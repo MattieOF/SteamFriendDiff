@@ -2,6 +2,7 @@
 using Steam.Models.SteamCommunity;
 using SteamWebAPI2.Interfaces;
 using SteamWebAPI2.Utilities;
+using Config;
 
 namespace SteamFriendDiff;
 
@@ -26,37 +27,41 @@ public static class SteamFriendDiff
             this.FriendsSince = friendsSince;
         }
     }
-    
+
+    [ConfigValue("SteamKey", "Config.toml", "Steam API key. Get one at https://steamcommunity.com/dev/apikey")]
+    private static string _steamKey = "";
+
+    [ConfigValue("SteamKeyTestID", "Config.toml", "Steam Profile ID used to test that the API key is valid")]
+    private static ulong _steamKeyTestID = 76561197960435530;
+
     public static async Task Main(string[] args)
     {
+        ConfigManager.InitConfig(".");
+        
         // Init steam API
-        string steamKey = "";
         SteamUser? steamInterface;
-
-        if (File.Exists("SteamAPIKey.txt"))
-            steamKey = await File.ReadAllTextAsync("SteamAPIKey.txt");
 
         while (true)
         {
-            if (string.IsNullOrWhiteSpace(steamKey))
-                steamKey = AnsiConsole.Ask<string>("Input a Steam Web API key (get one at https://steamcommunity.com/dev/apikey): ");
+            if (string.IsNullOrWhiteSpace(_steamKey))
+                _steamKey = AnsiConsole.Ask<string>("Input a Steam Web API key (get one at https://steamcommunity.com/dev/apikey): ");
             
-            var webInterfaceFactory = new SteamWebInterfaceFactory(steamKey);
+            var webInterfaceFactory = new SteamWebInterfaceFactory(_steamKey);
             steamInterface = webInterfaceFactory.CreateSteamWebInterface<SteamUser>(new HttpClient());
             try
             {
-                await steamInterface.GetPlayerSummaryAsync(76561197960435530);
+                await steamInterface.GetPlayerSummaryAsync(_steamKeyTestID);
             }
             catch
             {
                 AnsiConsole.Foreground = Color.Red;
                 AnsiConsole.WriteLine("Steam API key appears to be invalid");
                 AnsiConsole.ResetColors();
-                steamKey = "";
+                _steamKey = "";
                 continue;
             }
             
-            await File.WriteAllTextAsync("SteamAPIKey.txt", steamKey);
+            ConfigManager.RefreshConfigValues();
             break;
         }
 
