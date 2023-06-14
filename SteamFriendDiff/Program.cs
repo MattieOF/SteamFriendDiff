@@ -326,7 +326,7 @@ public static class SteamFriendDiff
                     var playerSummaryData = playerSummaryResponse.Data;
                     AnsiConsole.WriteLine($"+ {playerSummaryData.Nickname} ({currentFriend.Key})");
                 }
-                AnsiConsole.Write($"Since {currentFriend.Value:f}");
+                AnsiConsole.WriteLine($"Since {currentFriend.Value:f}");
             }
         }
         AnsiConsole.ResetColors();
